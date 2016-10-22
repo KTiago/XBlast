@@ -1,17 +1,18 @@
-package ch.epfl.xblast.server;
-
 /**
  * Classe qui modélise un niveau
  * 
  * @author Benno Schneeberger (258711)
  * @author Tiago Kieliger (258981)
  */
+package ch.epfl.xblast.server;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import ch.epfl.xblast.Cell;
 import ch.epfl.xblast.PlayerID;
@@ -51,22 +52,24 @@ public final class Level {
         Block xx = Block.DESTRUCTIBLE_WALL;
         Board board = Board.ofQuadrantNWBlocksWalled(
           Arrays.asList(
-            Arrays.asList(__, __, __, __, __, __, __),
+            Arrays.asList(__, __, __, __, __, xx, __),
             Arrays.asList(__, XX, xx, XX, xx, XX, xx),
             Arrays.asList(__, xx, __, __, __, xx, __),
             Arrays.asList(xx, XX, __, XX, XX, XX, XX),
             Arrays.asList(__, xx, __, xx, __, __, __),
             Arrays.asList(xx, XX, xx, XX, xx, XX, __)));
         
-        Player p1 = new Player(PlayerID.PLAYER_1, 3, new Cell(1, 1), 2, 3);
-        Player p2 = new Player(PlayerID.PLAYER_2, 3, new Cell(13, 1), 2, 3);
-        Player p3 = new Player(PlayerID.PLAYER_3, 3, new Cell(13, 11), 2, 3);
-        Player p4 = new Player(PlayerID.PLAYER_4, 3, new Cell(1, 11), 2, 3);
+        final int nbrLifeByDefault = 3;
+        final int nbrBombByDefault = 2;
+        final int bombRangeByDefault = 3;
+        final List<Cell> startingCells = new ArrayList<>(Arrays.asList(new Cell(1, 1),
+                new Cell(13, 1), new Cell(13, 11), new Cell(1, 11)));        
+
         List<Player> players = new ArrayList<Player>();
-        players.add(p1);
-        players.add(p2);
-        players.add(p3);
-        players.add(p4);
+        for(int i = 0; i < PlayerID.values().length; ++i){
+            players.add(new Player(PlayerID.values()[i], nbrLifeByDefault,
+                    startingCells.get(i), nbrBombByDefault, bombRangeByDefault));
+        }
         return new GameState(board, players);
     }
     
@@ -80,8 +83,8 @@ public final class Level {
      *          l'état initial
      */
     public Level (BoardPainter boardPainter, GameState initialGameState) {
-        this.boardPainter = boardPainter;
-        this.initialGameState = initialGameState;
+        this.boardPainter = Objects.requireNonNull(boardPainter);
+        this.initialGameState = Objects.requireNonNull(initialGameState);
     }
     
     /**

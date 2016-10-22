@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import ch.epfl.xblast.ArgumentChecker;
 import ch.epfl.xblast.PlayerID;
 import ch.epfl.xblast.SubCell;
 
@@ -125,9 +126,9 @@ public final class GameState {
          *          l'image associée au joueur
          */
         public Player(PlayerID id, int lives, SubCell position, Image image) {
-            this.id = id;
-            this.lives = lives;
-            this.position = position;
+            this.id = Objects.requireNonNull(id);
+            this.lives = ArgumentChecker.requireNonNegative(lives);
+            this.position = Objects.requireNonNull(position);
             this.image = image;
         }
 

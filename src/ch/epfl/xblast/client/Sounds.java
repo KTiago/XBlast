@@ -10,6 +10,7 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 public final class Sounds {
+    private static Clip clip;
     private Sounds(){
     }
     
@@ -34,5 +35,21 @@ public final class Sounds {
         } catch (UnsupportedAudioFileException | IOException  | LineUnavailableException e) {
             e.printStackTrace();
         }
+    }
+    
+    public static void playWaiting(){
+        URL url = Main.class.getClassLoader().getResource("waiting.wav");
+        AudioInputStream audioIn;
+        try {
+            audioIn = AudioSystem.getAudioInputStream(url);
+            clip = AudioSystem.getClip();
+            clip.open(audioIn);
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+        } catch (UnsupportedAudioFileException | IOException  | LineUnavailableException e) {
+            e.printStackTrace();
+        }
+    }
+    public static void stopWaiting(){
+        clip.close();
     }
 }

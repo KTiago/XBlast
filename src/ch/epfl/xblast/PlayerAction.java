@@ -1,3 +1,9 @@
+/**
+ * Enumération pour les différentes actions du joueurs
+ * 
+ * @author Benno Schneeberger (258711)
+ * @author Tiago Kieliger (258981)
+ */
 package ch.epfl.xblast;
 
 public enum PlayerAction {

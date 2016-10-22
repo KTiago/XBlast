@@ -8,13 +8,12 @@
 package ch.epfl.xblast.server;
 
 public final class ExplosionPainter {
-    public static final byte BYTE_FOR_EMPTY = 16;
+    protected static final byte BYTE_FOR_EMPTY = 16;
 
     private static final byte BYTE_FOR_BLACK_BOMB = 20;
     private static final byte BYTE_FOR_WHITE_BOMB = 21;
 
-    private ExplosionPainter() {
-    }
+    private ExplosionPainter() {}
 
     /**
      * Retourne l'octet identifiant l'image à utiliser en fonction de la bombe

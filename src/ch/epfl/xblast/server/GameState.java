@@ -1,4 +1,5 @@
 /**
+ /**
  * L'état d'une partie
  * 
  * @author Benno Schneeberger (258711)
@@ -581,3 +582,4 @@ public final class GameState {
         return playersInOrder;
     }
 }
+

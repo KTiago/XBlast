@@ -31,6 +31,9 @@ public class AI {
         this.rng = rng;
     }
 
+    public PlayerID id (){
+        return id;
+    }
     public AI copy(){
         AI copy = new AI(this.id, this.rng);
         copy.lastDirection = this.lastDirection;

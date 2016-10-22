@@ -32,9 +32,9 @@ public final class BoardPainter {
      *             si l'un des arguments est null
      */
     public BoardPainter(Map<Block, BlockImage> palette, BlockImage freeShadow) {
-        this.freeShadow = Objects.requireNonNull(freeShadow);
         this.palette = Collections.unmodifiableMap(
                 new HashMap<>(Objects.requireNonNull(palette)));
+        this.freeShadow = Objects.requireNonNull(freeShadow);
     }
 
     /**
@@ -49,7 +49,7 @@ public final class BoardPainter {
      */
     public byte byteForCell(Board board, Cell c) {
         //Si le block est libre et a un mur à l'ouest renvoie un block ombré.
-        //renvoie le block correspondant dans la palette sinon
+        //sinon renvoie le block correspondant dans la palette donnée
         Boolean isShadowed = board.blockAt(c).isFree()
                 && board.blockAt(c.neighbor(Direction.W)).castsShadow();
         return (byte) (isShadowed ? freeShadow : palette.get(board.blockAt(c))).ordinal();

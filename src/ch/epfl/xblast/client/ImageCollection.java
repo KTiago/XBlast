@@ -43,7 +43,6 @@ public final class ImageCollection {
             }
         } catch (URISyntaxException e1) {
         }
-
     }
 
     /**

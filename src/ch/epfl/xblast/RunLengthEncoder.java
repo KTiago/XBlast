@@ -13,8 +13,10 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class RunLengthEncoder {
-    private RunLengthEncoder() {
-    }
+    private final static int MAX_RUN_LENGTH = 130;
+    private final static int MAX_UNENCODED_RUN_LENGTH = 2;
+    
+    private RunLengthEncoder() {}
 
     /**
      * Encode par plage la liste d'octets fournie en paramètre
@@ -27,30 +29,20 @@ public final class RunLengthEncoder {
      */
     public static List<Byte> encode(List<Byte> list) {
         List<Byte> encoded = new ArrayList<>();
-        int count = 0;
+        int runLength = 0;
         Byte previous = list.get(0);
         for (Byte b : list) {
             ArgumentChecker.requireNonNegative(b);
-            if (b == previous && count < 130)
-                count++;
+            if (b == previous && runLength < MAX_RUN_LENGTH)
+                runLength++;
             else {
-                addToCode(count, previous, encoded);
-                count = 1;
+                addToCode(runLength, previous, encoded);
+                runLength = 1;
+                previous = b;
             }
-            previous = b;
         }
-        addToCode(count, previous, encoded);
-        return encoded;
-    }
-
-    private static void addToCode(int count, byte previous,
-            List<Byte> encoded) {
-        if (count <= 2) {
-            encoded.addAll(Collections.nCopies(count, previous));
-        } else {
-            encoded.add((byte) (-(count - 2)));
-            encoded.add(previous);
-        }
+        addToCode(runLength, previous, encoded);
+        return Collections.unmodifiableList(encoded);
     }
 
     /**
@@ -66,16 +58,27 @@ public final class RunLengthEncoder {
     public static List<Byte> decode(List<Byte> list) {
         List<Byte> decoded = new ArrayList<>();
         Iterator<Byte> it = list.iterator();
+        Byte b;
         while (it.hasNext()) {
-            byte b = it.next();
+            b = it.next();
             if (b < 0) {
                 if (!it.hasNext())
                     throw new IllegalArgumentException();
-                decoded.addAll(Collections.nCopies(-b + 2, it.next()));
+                decoded.addAll(Collections.nCopies(MAX_UNENCODED_RUN_LENGTH - b, it.next()));
             } else {
                 decoded.add(b);
             }
         }
-        return decoded;
+        return Collections.unmodifiableList(decoded);
+    }
+
+    
+    private static void addToCode(int count, byte previous, List<Byte> encoded) {
+        if (count <= MAX_UNENCODED_RUN_LENGTH) {
+            encoded.addAll(Collections.nCopies(count, previous));
+        } else {
+            encoded.add((byte)(MAX_UNENCODED_RUN_LENGTH - count));
+            encoded.add(previous);
+        }
     }
 }

@@ -7,18 +7,11 @@
 package ch.epfl.xblast.client;
 
 import java.awt.Image;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.UnsupportedAudioFileException;
 
 import ch.epfl.xblast.Cell;
 import ch.epfl.xblast.PlayerID;
@@ -34,6 +27,8 @@ public final class GameStateDeserializer {
     private final static byte BYTE_TEXT_RIGHT = 11;
     private final static byte BYTE_TEXT_VOID = 12;
     private final static byte SIZE_SERIALIZED_PLAYER = 16;
+    private final static int NBR_IMAGES_PER_PLAYER = 2;
+    private final static int NBR_IMAGES_MIDDLE_GAP = 8;
     
     private final static ImageCollection BLOCK_IMAGES = new ImageCollection("block");
     private final static ImageCollection EXPLOSION_IMAGES = new ImageCollection("explosion");
@@ -89,36 +84,16 @@ public final class GameStateDeserializer {
      */
     private static List<Player> deserializePlayers(List<Byte> serializedPlayers){
         List<Player> players = new ArrayList<>();
-        Iterator<Byte> i = serializedPlayers.iterator();
-        int count = 0;
-        PlayerID id = null;
-        int lives = 0;
-        int x = 0;
-        int y = 0;
-        Image image = null;
-        while(i.hasNext()){
-            int b = Byte.toUnsignedInt(i.next());
-            switch(count % 4){
-            case 0:
-                id = PlayerID.values()[count / 4];
-                lives = b;
-                break;
-            case 1:
-                x = b;
-                break;
-            case 2:
-                y = b;
-                break;
-            case 3:
-                image = PLAYER_IMAGES.imageOrNull(b);
-                break;
-            }
-            ++ count;
-            if(count % 4 == 0 && count != 0){
-                players.add(new Player(id,lives,new SubCell(x,y),image));
-            }
+        Iterator<Byte> it = serializedPlayers.iterator();
+        for(PlayerID id : PlayerID.values()){
+            players.add(new Player(
+                    id,
+                    Byte.toUnsignedInt(it.next()),
+                    new SubCell(Byte.toUnsignedInt(it.next()), Byte.toUnsignedInt(it.next())),
+                    PLAYER_IMAGES.imageOrNull(Byte.toUnsignedInt(it.next()))
+                    ));
         }
-        return players;
+        return Collections.unmodifiableList(players);
     }
     
     
@@ -131,20 +106,12 @@ public final class GameStateDeserializer {
      * @return une liste d'image correspondant au plateau de jeu
      */
     private static List<Image> deserializeBoard(List<Byte> serializedBoard){
-        List<Image> boardInSpiralOrder = new ArrayList<>();
-        List<Byte> decodedSerializedBoard = RunLengthEncoder.decode(serializedBoard);
-        for(byte b:decodedSerializedBoard){
-            boardInSpiralOrder.add(BLOCK_IMAGES.image(b));
-        }
-        
-        //Converti le plateau de l'ordre spiral à l'ordre de lecture
-        List<Image> boardRowMajorOrder = new ArrayList<>(Collections.nCopies(Cell.COUNT, null));
         Iterator<Cell> cellIt = Cell.SPIRAL_ORDER.iterator();
-        Iterator<Image> boardIt = boardInSpiralOrder.iterator();
-        while(cellIt.hasNext() && boardIt.hasNext()){
-            boardRowMajorOrder.set(cellIt.next().rowMajorIndex(), boardIt.next());
-        }      
-        return boardRowMajorOrder;
+        Image[] boardRowMajorOrder = new Image[Cell.COUNT];
+        for(byte b : RunLengthEncoder.decode(serializedBoard)){
+            boardRowMajorOrder[cellIt.next().rowMajorIndex()] = BLOCK_IMAGES.image(b);
+        }    
+        return Collections.unmodifiableList(Arrays.asList(boardRowMajorOrder));
     }
     
     /**
@@ -158,12 +125,11 @@ public final class GameStateDeserializer {
      *         d'explosion
      */
     private static List<Image> deserializeBombAndBlast(List<Byte> serializedBombsAndBlasts){
-        List<Byte> decodedSerializedBombAndBlasts = RunLengthEncoder.decode(serializedBombsAndBlasts);
         List<Image> bombsAndBlasts = new ArrayList<>();
-        for(byte b : decodedSerializedBombAndBlasts){
+        for(byte b : RunLengthEncoder.decode(serializedBombsAndBlasts)){
             bombsAndBlasts.add(EXPLOSION_IMAGES.imageOrNull(b));
         }
-        return bombsAndBlasts;
+        return Collections.unmodifiableList(bombsAndBlasts);
     }
     
     /**
@@ -177,18 +143,19 @@ public final class GameStateDeserializer {
     private static List<Image> deserializeScore(List<Player> players){
         List<Image> playerScore = new ArrayList<>();
         for(Player player : players){
-            //Ajoute la tête du joueur dépendant de s'il est mort ou pas
-            playerScore.add(player.lives() == 0
-                    ? SCORE_IMAGES.image(player.id().ordinal() * 2 + 1)
-                    : SCORE_IMAGES.image(player.id().ordinal() * 2));
+            //Ajoute la tête du joueur selon s'il est mort ou pas
+            playerScore.add(SCORE_IMAGES.image(player.id().ordinal() * NBR_IMAGES_PER_PLAYER + (player.lives() == 0
+                    ? 1
+                    : 0)));
             playerScore.add(SCORE_IMAGES.image(BYTE_TEXT_MIDDLE));
             playerScore.add(SCORE_IMAGES.image(BYTE_TEXT_RIGHT));
             //Entre le joueur 2 et 3, il y a 8 blocs "vides"
             if(player.id() == PlayerID.PLAYER_2){
-                playerScore.addAll(Collections.nCopies(8, SCORE_IMAGES.image(BYTE_TEXT_VOID)));
+                playerScore.addAll(Collections.nCopies
+                        (NBR_IMAGES_MIDDLE_GAP, SCORE_IMAGES.image(BYTE_TEXT_VOID)));
             }
         }
-        return playerScore;
+        return Collections.unmodifiableList(playerScore);
     }
     
     /**
@@ -204,6 +171,6 @@ public final class GameStateDeserializer {
         List<Image> remainingTime = new ArrayList<>();
         remainingTime.addAll(Collections.nCopies(numberLedOn, SCORE_IMAGES.image(BYTE_LED_ON)));
         remainingTime.addAll(Collections.nCopies(TOTAL_NUMBER_LED - numberLedOn, SCORE_IMAGES.image(BYTE_LED_OFF)));
-        return remainingTime;
+        return Collections.unmodifiableList(remainingTime);
     }
 }

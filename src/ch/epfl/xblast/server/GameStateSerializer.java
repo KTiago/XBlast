@@ -1,11 +1,11 @@
-package ch.epfl.xblast.server;
-
 /**
  * Serialiseur d'état de jeu
  * 
  * @author Benno Schneeberger (258711)
  * @author Tiago Kieliger (258981)
  */
+package ch.epfl.xblast.server;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,6 +21,8 @@ import ch.epfl.xblast.RunLengthEncoder;
 
 public final class GameStateSerializer {
 
+    private static final int SECONDS_BY_LED = 2;
+    
     private GameStateSerializer() {
     }
 
@@ -46,10 +48,14 @@ public final class GameStateSerializer {
                 serializedPlayer(gameState.players(), gameState.ticks()));
         serializedGameState
                 .add(serializedRemainingTime(gameState.remainingTime()));
-        serializedGameState.add((byte) (gameState.explodingSound() ? 1 : 0));
+        
+        int b = 0;
+        b += gameState.explodingSound() ? 1 : 0;
         for(PlayerID id : PlayerID.values()){
-            serializedGameState.add((byte)(gameState.isUpgraded(id) ? 1 : 0));
+            b = b << 1;
+            b += gameState.isUpgraded(id) ? 1 : 0;
         }
+        serializedGameState.add((byte) b);
         return serializedGameState;
     }
 
@@ -142,6 +148,6 @@ public final class GameStateSerializer {
      * @return la version sérialisée du temps restant
      */
     private static Byte serializedRemainingTime(double remainingTime) {
-        return (byte) Math.ceil(remainingTime / 2);
+        return (byte) Math.ceil(remainingTime / SECONDS_BY_LED);
     }
 }
